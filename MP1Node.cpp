@@ -217,6 +217,13 @@ void MP1Node::checkMessages() {
  */
 bool MP1Node::recvCallBack(void *env, char *data, int size ) {
     
+    if (size < (int)sizeof(MessageHdr)) {
+#ifdef DEBUGLOG
+        log->LOG(&memberNode->addr, "Message received with size less than MessageHdr. Ignored.");
+#endif
+        return false;
+    }
+    
     Member* localNode = (Member*) env;
 
     // get the data back in the required format
@@ -235,9 +242,8 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 
     if (incomingMsg.msgType == JOINREQ)
     {
-        /*
         // dhsawhne: need +1 for the end of the array I think
-        size_t msgsize = sizeof(MessageHdr) + sizeof(addr) + 1;
+        size_t msgsize = sizeof(MessageHdr) + sizeof(memberNode->addr.addr) + 1;
 
         // craft the message
         MessageHdr * sendingMsg = (MessageHdr *) malloc(msgsize * sizeof(char));
@@ -246,14 +252,13 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
         memcpy((char *)(sendingMsg+1), &localNode->addr.addr, sizeof(localNode->addr.addr));
 
         #ifdef DEBUGLOG
-        log->LOG(&localNode->addr, "Received JoinReq. Sending back response", addr);
+        log->LOG(&localNode->addr, "Received JoinReq. Sending back response");
         #endif
 
         // send JOINREQ message to introducer member
-        // emulNet->ENsend(&memberNode->addr, joinaddr, (char *)msg, msgsize);
+        emulNet->ENsend(&memberNode->addr, &joinaddr, (char *)sendingMsg, msgsize);
 
         free(sendingMsg);
-        */
     }
 
     if (incomingMsg.msgType == JOINREP)
@@ -264,6 +269,9 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
         #endif
 
         localNode->inGroup = true;
+        #ifdef DEBUGLOG
+        log->LOG(&localNode->addr, "In the group.");
+        #endif
     }
 
 	/*
