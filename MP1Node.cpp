@@ -216,12 +216,39 @@ void MP1Node::checkMessages() {
  * DESCRIPTION: Message handler for different message types
  */
 bool MP1Node::recvCallBack(void *env, char *data, int size ) {
-    MessageHdr msg;
-    Member memberNode;
+    
+    #ifdef DEBUGLOG
+    static char s[1024];
+    #endif
 
-    memcpy(&msg, data, sizeof(MessageHdr));
+    Member* localNode = (Member*) env;
 
-    cout << "here" << endl;
+    // get the data back in the required format
+    // the incoming message type
+    MessageHdr incomingMsg;
+
+    // the source (sender)
+    char addr[6] = {0};
+
+    memcpy(&incomingMsg, data, sizeof(MessageHdr));
+    memcpy(&addr, data + sizeof(MessageHdr), sizeof(addr));
+
+    if (incomingMsg.msgType == JOINREQ)
+    {
+        // dhsawhne: need +1 for the end of the array I think
+        size_t msgsize = sizeof(MessageHdr) + sizeof(addr) + 1;
+
+        // craft the message
+        MessageHdr * sendingMsg = (MessageHdr *) malloc(msgsize * sizeof(char));
+        sendingMsg->msgType = JOINREP;
+
+        memcpy((char *)(sendingMsg+1), &localNode->addr.addr, sizeof(localNode->addr.addr));
+
+        #ifdef DEBUGLOG
+        sprintf(s, "Received JoinReq. Sending back response to %s ..", addr);
+        log->LOG(&memberNode->addr, s);
+        #endif
+    }
 
 	/*
 	 * Your code goes here
