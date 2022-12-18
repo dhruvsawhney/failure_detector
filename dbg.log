@@ -18,25 +18,25 @@
  7.0.0.0:0 [1] Trying to join...
  6.0.0.0:0 [1] Trying to join...
  5.0.0.0:0 [1] Trying to join...
- 1.0.0.0:0 [1] Send to: 2:0
- 1.0.0.0:0 [1] Send to: 3:0
- 1.0.0.0:0 [1] Send to: 4:0
+ 1.0.0.0:0 [1] JoinReq received. Send response to: 2:0
+ 1.0.0.0:0 [1] JoinReq received. Send response to: 3:0
+ 1.0.0.0:0 [1] JoinReq received. Send response to: 4:0
  10.0.0.0:0 [2] Trying to join...
  9.0.0.0:0 [2] Trying to join...
  4.0.0.0:0 [2] In the group.
  3.0.0.0:0 [2] In the group.
  2.0.0.0:0 [2] In the group.
- 1.0.0.0:0 [2] Send to: 5:0
- 1.0.0.0:0 [2] Send to: 6:0
- 1.0.0.0:0 [2] Send to: 7:0
- 1.0.0.0:0 [2] Send to: 8:0
+ 1.0.0.0:0 [2] JoinReq received. Send response to: 5:0
+ 1.0.0.0:0 [2] JoinReq received. Send response to: 6:0
+ 1.0.0.0:0 [2] JoinReq received. Send response to: 7:0
+ 1.0.0.0:0 [2] JoinReq received. Send response to: 8:0
  8.0.0.0:0 [3] In the group.
  7.0.0.0:0 [3] In the group.
  6.0.0.0:0 [3] In the group.
  5.0.0.0:0 [3] In the group.
- 1.0.0.0:0 [3] Send to: 9:0
- 1.0.0.0:0 [3] Send to: 10:0
+ 1.0.0.0:0 [3] JoinReq received. Send response to: 9:0
+ 1.0.0.0:0 [3] JoinReq received. Send response to: 10:0
  10.0.0.0:0 [4] In the group.
  9.0.0.0:0 [4] In the group.
- 3.0.0.0:0 [100] Node failed at time=100
+ 9.0.0.0:0 [100] Node failed at time=100
  1.0.0.0:0 [500] @@time=500

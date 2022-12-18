@@ -258,12 +258,8 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 
     if (incomingMsg.msgType == JOINREP)
     {
-
-        #ifdef DEBUGLOG
-        // log->LOG(&localNode->addr, "Joined group.", addr);
-        #endif
-
         memberNode->inGroup = true;
+
         #ifdef DEBUGLOG
         log->LOG(&memberNode->addr, "In the group.");
         #endif
