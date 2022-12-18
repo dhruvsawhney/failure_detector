@@ -244,7 +244,10 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
         memcpy((char *)(sendingMsg+1), &memberNode->addr.addr, sizeof(memberNode->addr.addr));
 
         #ifdef DEBUGLOG
-        log->LOG(&memberNode->addr, "Received JoinReq. Sending back response");
+        string temp = joinaddr.getAddress();
+        char char_array[temp.length() + 1];
+        strcpy(char_array, temp.c_str());
+        log->LOG(&memberNode->addr, "JoinReq received. Send response to: %s", char_array);
         #endif
 
         // send JOINREQ message to introducer member
