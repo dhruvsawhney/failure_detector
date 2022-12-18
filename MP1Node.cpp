@@ -218,26 +218,18 @@ void MP1Node::checkMessages() {
 bool MP1Node::recvCallBack(void *env, char *data, int size ) {
     
     if (size < (int)sizeof(MessageHdr)) {
-#ifdef DEBUGLOG
-        log->LOG(&memberNode->addr, "Message received with size less than MessageHdr. Ignored.");
-#endif
+        #ifdef DEBUGLOG
+                log->LOG(&memberNode->addr, "Message received with size less than MessageHdr. Ignored.");
+        #endif
         return false;
     }
-    
-    Member* localNode = (Member*) env;
 
     // get the data back in the required format
     // the incoming message type
     MessageHdr incomingMsg;
-
-    // the source (sender)
-    // char addr[6] = {0};
-
-    memcpy(&incomingMsg, data, sizeof(MessageHdr));
-    // memcpy(&addr, data + sizeof(MessageHdr), sizeof(addr));
-
     Address joinaddr;
 
+    memcpy(&incomingMsg, data, sizeof(MessageHdr));
     memcpy(joinaddr.addr, data + sizeof(MessageHdr), sizeof(memberNode->addr.addr));
 
     if (incomingMsg.msgType == JOINREQ)
@@ -249,10 +241,10 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
         MessageHdr * sendingMsg = (MessageHdr *) malloc(msgsize * sizeof(char));
         sendingMsg->msgType = JOINREP;
 
-        memcpy((char *)(sendingMsg+1), &localNode->addr.addr, sizeof(localNode->addr.addr));
+        memcpy((char *)(sendingMsg+1), &memberNode->addr.addr, sizeof(memberNode->addr.addr));
 
         #ifdef DEBUGLOG
-        log->LOG(&localNode->addr, "Received JoinReq. Sending back response");
+        log->LOG(&memberNode->addr, "Received JoinReq. Sending back response");
         #endif
 
         // send JOINREQ message to introducer member
@@ -268,9 +260,9 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
         // log->LOG(&localNode->addr, "Joined group.", addr);
         #endif
 
-        localNode->inGroup = true;
+        memberNode->inGroup = true;
         #ifdef DEBUGLOG
-        log->LOG(&localNode->addr, "In the group.");
+        log->LOG(&memberNode->addr, "In the group.");
         #endif
     }
 
