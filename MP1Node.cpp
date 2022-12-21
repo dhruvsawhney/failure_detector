@@ -129,6 +129,12 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
         log->LOG(&memberNode->addr, "Starting up group...");
 #endif
         memberNode->inGroup = true;
+
+        for (int i = 0; i < par->EN_GPSZ; i++)
+        {   
+            MemberListEntry memberEntry(i, 0, 0, 0);
+            memberNode->memberList.push_back(memberEntry);
+        }
     }
     else {
         size_t msgsize = sizeof(MessageHdr) + sizeof(joinaddr->addr) + sizeof(long) + 1;
