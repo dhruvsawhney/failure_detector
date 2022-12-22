@@ -293,9 +293,16 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
             Address addr;
             memcpy(&addr, incomingNextPtr, sizeof(addr.addr));
 
+            int id = 0;
+            memcpy(&id, &(addr.addr[0]), sizeof(int));
+
+            MemberListEntry memberEntry(id, 0, 0, 0);
+            memberNode->memberList.push_back(memberEntry);
+
+            // increment the pointer
             incomingNextPtr += sizeof(addr.addr);
         }
-        
+
         memberNode->inGroup = true;
 
         #ifdef DEBUGLOG
