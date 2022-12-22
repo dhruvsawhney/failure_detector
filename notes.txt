@@ -1,0 +1,39 @@
+
+Algo:
+
+    Sender:
+
+        Ping each node
+        
+    Receiver:
+
+        If down, don't respond
+    
+    Sender:
+        
+        1. Logic to potentially remove a node from its membership list
+
+            NOTE: Does this mean to track last send time? Check if such concept already exists ....
+
+        #define TREMOVE 20
+        #define TFAIL 5
+
+        Didn't hear back in TFail seconds:
+
+            -> Mark for deletion
+            NOTE: Mark for deletion isn't the same as immediate deletion. Treat node as up when gossip the list
+        
+        If TFAIL + TRemove has passed:
+
+            -> Remove from list
+        
+        2. Reconcile data received
+
+            When we receive a response, take the max result from a given node (that isn't self)
+
+        3. At each timestep, increment local heartbeat (this is only thing a given node can control)
+
+
+    
+    Sender (upon receipt):
+
