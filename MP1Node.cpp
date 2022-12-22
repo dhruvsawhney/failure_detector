@@ -131,9 +131,15 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
         memberNode->inGroup = true;
 
         for (int i = 0; i < par->EN_GPSZ; i++)
-        {   
+        {     
             MemberListEntry memberEntry(i, 0, 0, 0);
             memberNode->memberList.push_back(memberEntry);
+
+            int id = i;
+            Address addr;
+            memcpy(&(addr.addr[0]), &id, sizeof(int));
+
+            log->logNodeAdd(&memberNode->addr, &addr);
         }
     }
     else {
@@ -300,7 +306,7 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
             memberNode->memberList.push_back(memberEntry);
 
             log->logNodeAdd(&memberNode->addr, &addr);
-            
+
             // increment the pointer
             incomingNextPtr += sizeof(addr.addr);
         }
