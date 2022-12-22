@@ -238,22 +238,40 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
     memcpy(&incomingMsg, data, sizeof(MessageHdr));
     memcpy(joinaddr.addr, data + sizeof(MessageHdr), sizeof(memberNode->addr.addr));
 
+    // it will point to the data after both the message header and the `joinAddr`
+    char* incomingNextPtr = data + sizeof(MessageHdr) + sizeof(memberNode->addr.addr);
     if (incomingMsg.msgType == JOINREQ)
     {
-        // dhsawhne: need +1 for the end of the array I think
-        size_t msgsize = sizeof(MessageHdr) + sizeof(memberNode->addr.addr) + 1;
+        int members = memberNode->memberList.size();
 
-        // craft the message
-        MessageHdr * sendingMsg = (MessageHdr *) malloc(msgsize * sizeof(char));
+        // format: message type, sender (i.e. current node), # members, (# members * address of each member)
+        size_t msgsize = sizeof(MessageHdr) +  sizeof(memberNode->addr.addr) + sizeof(int) + (members * sizeof(memberNode->addr.addr));
+        MessageHdr* sendingMsg =  (MessageHdr*) malloc(msgsize * sizeof(char));
+
         sendingMsg->msgType = JOINREP;
 
-        memcpy((char *)(sendingMsg+1), &memberNode->addr.addr, sizeof(memberNode->addr.addr));
+        char* next = (char*)(sendingMsg+1);
+        memcpy(next, &memberNode->addr.addr, sizeof(memberNode->addr.addr));
+        next += sizeof(memberNode->addr.addr);
+
+        memcpy(next, &members, sizeof(int));
+        next += sizeof(int);
+
+        for(auto i : memberNode->memberList)
+        {
+            int id = i.getid();
+
+            Address sendingAddr;
+            *(int *)(&(sendingAddr.addr))=id;
+            *(short *)(&(sendingAddr.addr[4]))=0;
+
+            memcpy(next, &sendingAddr.addr, sizeof(sendingAddr.addr));
+
+            next += sizeof(sendingAddr.addr);
+        }
 
         #ifdef DEBUGLOG
-        string temp = joinaddr.getAddress();
-        char char_array[temp.length() + 1];
-        strcpy(char_array, temp.c_str());
-        log->LOG(&memberNode->addr, "JoinReq received. Send response to: %s", char_array);
+        log->LOG(&memberNode->addr, "JoinReq received. Send response to: %s", joinaddr.addr);
         #endif
 
         // send JOINREQ message to introducer member
@@ -264,6 +282,20 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 
     if (incomingMsg.msgType == JOINREP)
     {
+        int members = 0;
+        memcpy(&members, incomingNextPtr, sizeof(int));
+        incomingNextPtr += sizeof(int);
+
+        // dhsawhne: TODO we included self in the membership list here and in the seed node
+        // we shouldn't include self
+        for (int i = 0; i < members; i++)
+        {
+            Address addr;
+            memcpy(&addr, incomingNextPtr, sizeof(addr.addr));
+
+            incomingNextPtr += sizeof(addr.addr);
+        }
+        
         memberNode->inGroup = true;
 
         #ifdef DEBUGLOG
