@@ -299,6 +299,8 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
             MemberListEntry memberEntry(id, 0, 0, 0);
             memberNode->memberList.push_back(memberEntry);
 
+            log->logNodeAdd(&memberNode->addr, &addr);
+            
             // increment the pointer
             incomingNextPtr += sizeof(addr.addr);
         }
