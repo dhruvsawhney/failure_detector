@@ -139,6 +139,11 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
             Address addr;
             memcpy(&(addr.addr[0]), &id, sizeof(int));
 
+            if (id > 10)
+            {
+                cout << "here" << endl;
+            }
+
             log->logNodeAdd(&memberNode->addr, &addr);
         }
     }
@@ -313,6 +318,11 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
             MemberListEntry memberEntry(id, 0, 0, 0);
             memberNode->memberList.push_back(memberEntry);
 
+            if (id > 10)
+            {
+                cout << "here" << endl;
+            }
+
             log->logNodeAdd(&memberNode->addr, &addr);
 
             // increment the pointer
@@ -348,15 +358,17 @@ void MP1Node::nodeLoopOps() {
     return;
 }
 
-void MP1Node::ReconcileGossipMembershipList(void* data)
+void MP1Node::ReconcileGossipMembershipList(char* data)
 {
     // int msgSize = sizeof(MessageHdr) + sizeof(this->memberNode->addr.addr) + sizeof(int) +  (activeMembers*sizeof(MemberListEntry));
-    char* nextPtr = ((char*)data) + sizeof(MessageHdr) + sizeof(this->memberNode->addr.addr);
+    // char* nextPtr = ((char*)data) + sizeof(MessageHdr) + sizeof(this->memberNode->addr.addr);
+
+    char* nextPtr = data + sizeof(MessageHdr) + sizeof(memberNode->addr.addr);
 
     int incomingMembers = 0;
     memcpy(&incomingMembers, nextPtr, sizeof(int));
 
-    for (int i = 0; i < incomingMembers; i++)
+    for (int i = 0; i <= incomingMembers; i++)
     {
         MemberListEntry incomingMemberEntry;
         memset(&incomingMemberEntry, '\0', sizeof(MemberListEntry));
@@ -399,6 +411,16 @@ void MP1Node::ReconcileGossipMembershipList(void* data)
                 newMemberEntry.timestamp = par->getcurrtime();
 
                 this->memberNode->memberList.push_back(newMemberEntry);
+
+                Address addedAddress;
+                this->PopulateAddress(&addedAddress, newMemberEntry.getid());
+
+                if (newMemberEntry.getid() > 10)
+                {
+                    cout << "here" << endl;
+                }
+
+                log->logNodeAdd(&this->memberNode->addr, &addedAddress);
             }
         }
     }
@@ -438,8 +460,22 @@ void MP1Node::GossipMembershipList()
             continue;
         }
 
+        if (ptr->getid() > 10)
+        {
+            cout << "here" << endl;
+        }
+
+        char* tempPtr = nextPtr;
+
         memcpy(nextPtr, &(*ptr), sizeof(MemberListEntry));
         nextPtr += sizeof(MemberListEntry);
+
+        MemberListEntry tempEntry;
+        memcpy(&tempEntry, tempPtr, sizeof(MemberListEntry));
+        if (tempEntry.getid() > 10)
+        {
+            cout << "here" << endl;
+        }
     }
 
     // finally, send the message to each member
@@ -470,8 +506,13 @@ bool MP1Node::TryRemoveExpiredMembers()
         // dhsawhne: > or >=?
         if ((par->getcurrtime()-ptr->gettimestamp()) >= TREMOVE)
         {
+            Address removedAddress;
+            this->PopulateAddress(&removedAddress, ptr->getid());
+
             this->memberNode->memberList.erase(ptr);
             isAnyMemberRemoved = true;
+
+            log->logNodeRemove(&this->memberNode->addr, &removedAddress);
         }
     }
 
@@ -506,7 +547,9 @@ int MP1Node::GetMemberNodePort()
 
 void MP1Node::PopulateAddress(Address* address, int id)
 {
-    memcpy(address->addr, &id, sizeof(int));
+    memset(address, '\0', sizeof(address->addr));
+
+    memcpy(&(address->addr[0]), &id, sizeof(int));
 
     short port = 0;
     memcpy(&(address->addr[4]), &port, sizeof(short));

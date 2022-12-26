@@ -60,7 +60,7 @@ private:
 	void IncrementMetadataForSelf();
 	bool TryRemoveExpiredMembers();
 	void GossipMembershipList();
-	void ReconcileGossipMembershipList(void* data);
+	void ReconcileGossipMembershipList(char* data);
 
 	void PopulateAddress(Address* address, int id);
 	int GetMemberNodeId();
