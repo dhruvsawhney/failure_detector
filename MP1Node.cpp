@@ -342,11 +342,62 @@ void MP1Node::nodeLoopOps() {
 
     this->IncrementMetadataForSelf();
     this->TryRemoveExpiredMembers();
+    this->GossipMembershipList();
     return;
+}
+
+void MP1Node::GossipMembershipList()
+{
+    int activeMembers = 0;
+    for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
+    {
+        // dhsawhne: > or >=?
+        if ((par->getcurrtime()-ptr->gettimestamp()) >= TFAIL)
+        {
+            continue;
+        }
+
+        activeMembers++;
+    }
+
+    // MessageFormat: MessageHeader, source address, # members, (#members * struct MembershipListEntry)
+    int msgSize = sizeof(MessageHdr) + sizeof(this->memberNode->addr.addr) + sizeof(int) +  (activeMembers*sizeof(MemberListEntry));
+    MessageHdr* sendingMsg = (MessageHdr*) malloc(msgSize);
+    sendingMsg->msgType = GOSSIP;
+
+    char* nextPtr = (char*)(sendingMsg + 1);
+
+    memcpy(nextPtr, &activeMembers, sizeof(int));
+    nextPtr += sizeof(int);
+
+    for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
+    {
+        // dhsawhne: > or >=?
+        if ((par->getcurrtime()-ptr->gettimestamp()) >= TFAIL)
+        {
+            continue;
+        }
+
+        memcpy(nextPtr, &(*ptr), sizeof(MemberListEntry));
+        nextPtr += sizeof(MemberListEntry);
+    }
+
+    // finally, send the message to each member
+    // dhsawhne: optimize by sending to only few members
+    for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
+    {
+        Address sendingAddress;
+        this->PopulateAddress(&sendingAddress, ptr->getid());
+
+        emulNet->ENsend(&memberNode->addr, &sendingAddress, (char *)sendingMsg, msgSize);
+    }
+
+    free(sendingMsg);
 }
 
 bool MP1Node::TryRemoveExpiredMembers()
 {
+    bool isAnyMemberRemoved = false;
     vector<MemberListEntry>::iterator ptr = this->memberNode->memberList.begin();
     for (;ptr < this->memberNode->memberList.end(); ptr++)
     {
@@ -360,8 +411,11 @@ bool MP1Node::TryRemoveExpiredMembers()
         if ((par->getcurrtime()-ptr->gettimestamp()) >= TREMOVE)
         {
             this->memberNode->memberList.erase(ptr);
+            isAnyMemberRemoved = true;
         }
     }
+
+    return isAnyMemberRemoved;
 }
 
 void MP1Node::IncrementMetadataForSelf()
@@ -388,6 +442,14 @@ int MP1Node::GetMemberNodeId()
 int MP1Node::GetMemberNodePort()
 {
     return 0;
+}
+
+void MP1Node::PopulateAddress(Address* address, int id)
+{
+    memcpy(address->addr, &id, sizeof(int));
+
+    short port = 0;
+    memcpy(address->addr, &port, sizeof(short));
 }
 
 /**

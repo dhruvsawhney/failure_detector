@@ -31,6 +31,7 @@
 enum MsgTypes{
     JOINREQ,
     JOINREP,
+	GOSSIP,
     DUMMYLASTMSGTYPE
 };
 
@@ -58,6 +59,9 @@ private:
 
 	void IncrementMetadataForSelf();
 	bool TryRemoveExpiredMembers();
+	void GossipMembershipList();
+
+	void PopulateAddress(Address* address, int id);
 	int GetMemberNodeId();
 	int GetMemberNodePort();
 
