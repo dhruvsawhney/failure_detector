@@ -60,10 +60,12 @@ private:
 	void IncrementMetadataForSelf();
 	bool TryRemoveExpiredMembers();
 	void GossipMembershipList();
+	void ReconcileGossipMembershipList(void* data);
 
 	void PopulateAddress(Address* address, int id);
 	int GetMemberNodeId();
 	int GetMemberNodePort();
+
 
 public:
 	MP1Node(Member *, Params *, EmulNet *, Log *, Address *);
@@ -85,6 +87,7 @@ public:
 	void initMemberListTable(Member *memberNode);
 	void printAddress(Address *addr);
 	virtual ~MP1Node();
+	
 };
 
 #endif /* _MP1NODE_H_ */

@@ -326,10 +326,12 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
         #endif
     }
 
-	/*
-	 * Your code goes here
-	 */
+    if (incomingMsg.msgType == GOSSIP)
+    {
+        this->ReconcileGossipMembershipList(data);
+    }
 }
+
 
 /**
  * FUNCTION NAME: nodeLoopOps
@@ -344,6 +346,61 @@ void MP1Node::nodeLoopOps() {
     this->TryRemoveExpiredMembers();
     this->GossipMembershipList();
     return;
+}
+
+void MP1Node::ReconcileGossipMembershipList(void* data)
+{
+    char* nextPtr = ((char*)data) + sizeof(MessageHdr) + sizeof(this->memberNode->addr.addr);
+
+    int incomingMembers = 0;
+    memcpy(&incomingMembers, nextPtr, sizeof(int));
+
+    for (int i = 0; i < incomingMembers; i++)
+    {
+        MemberListEntry incomingMemberEntry;
+        memset(&incomingMemberEntry, '\0', sizeof(MemberListEntry));
+
+        memcpy(&incomingMemberEntry, nextPtr, sizeof(MemberListEntry));
+        nextPtr += sizeof(MemberListEntry);
+
+        if (incomingMemberEntry.getid() == this->GetMemberNodeId() && incomingMemberEntry.getport() == this->GetMemberNodePort())
+        {
+            // can't reconcile self, only increment counters for self
+            continue;
+        }
+
+        bool found = false;
+        auto internalMemberEntry = this->memberNode->memberList.begin();
+        for (; internalMemberEntry < this->memberNode->memberList.end(); internalMemberEntry++)
+        {
+            if (internalMemberEntry->getid() == incomingMemberEntry.getid() 
+            && internalMemberEntry->getport() == incomingMemberEntry.getport())
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if (found)
+        {
+            if (incomingMemberEntry.getheartbeat() > internalMemberEntry->getheartbeat())
+            {
+                internalMemberEntry->heartbeat = incomingMemberEntry.getheartbeat();
+                internalMemberEntry->timestamp = par->getcurrtime();
+            }
+        }
+        else
+        {
+            // only add members if they're recently active gossip messages
+            if (par->getcurrtime() - incomingMemberEntry.gettimestamp() < TFAIL)
+            {
+                MemberListEntry newMemberEntry(incomingMemberEntry);
+                newMemberEntry.timestamp = par->getcurrtime();
+
+                this->memberNode->memberList.push_back(newMemberEntry);
+            }
+        }
+    }
 }
 
 void MP1Node::GossipMembershipList()
