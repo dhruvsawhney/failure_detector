@@ -350,6 +350,7 @@ void MP1Node::nodeLoopOps() {
 
 void MP1Node::ReconcileGossipMembershipList(void* data)
 {
+    // int msgSize = sizeof(MessageHdr) + sizeof(this->memberNode->addr.addr) + sizeof(int) +  (activeMembers*sizeof(MemberListEntry));
     char* nextPtr = ((char*)data) + sizeof(MessageHdr) + sizeof(this->memberNode->addr.addr);
 
     int incomingMembers = 0;
@@ -423,6 +424,8 @@ void MP1Node::GossipMembershipList()
     sendingMsg->msgType = GOSSIP;
 
     char* nextPtr = (char*)(sendingMsg + 1);
+    memcpy(nextPtr, this->memberNode->addr.addr, sizeof(this->memberNode->addr.addr));
+    nextPtr += sizeof(this->memberNode->addr.addr);
 
     memcpy(nextPtr, &activeMembers, sizeof(int));
     nextPtr += sizeof(int);
