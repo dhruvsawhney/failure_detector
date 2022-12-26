@@ -340,11 +340,34 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
  */
 void MP1Node::nodeLoopOps() {
 
-	/*
-	 * Your code goes here
-	 */
-
+    this->IncrementMetadataForSelf();
     return;
+}
+
+void MP1Node::IncrementMetadataForSelf()
+{
+    vector<MemberListEntry>::iterator ptr = this->memberNode->memberList.begin();
+    for (;ptr < this->memberNode->memberList.end(); ptr++)
+    {
+        if (ptr->getid() == this->GetMemberNodeId() && ptr->getport() == this->GetMemberNodePort())
+        {
+            ptr->heartbeat++;
+            ptr->timestamp++;
+        }
+    }
+}
+
+int MP1Node::GetMemberNodeId()
+{
+    int id = 0;
+    memcpy(&id, this->memberNode->addr.addr, sizeof(int));
+
+    return id;
+}
+
+int MP1Node::GetMemberNodePort()
+{
+    return 0;
 }
 
 /**

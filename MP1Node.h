@@ -56,6 +56,10 @@ private:
 	Member *memberNode;
 	char NULLADDR[6];
 
+	void IncrementMetadataForSelf();
+	int GetMemberNodeId();
+	int GetMemberNodePort();
+
 public:
 	MP1Node(Member *, Params *, EmulNet *, Log *, Address *);
 	Member * getMemberNode() {
