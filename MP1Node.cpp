@@ -449,7 +449,7 @@ void MP1Node::PopulateAddress(Address* address, int id)
     memcpy(address->addr, &id, sizeof(int));
 
     short port = 0;
-    memcpy(address->addr, &port, sizeof(short));
+    memcpy(&(address->addr[4]), &port, sizeof(short));
 }
 
 /**
