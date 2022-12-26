@@ -57,6 +57,7 @@ private:
 	char NULLADDR[6];
 
 	void IncrementMetadataForSelf();
+	bool TryRemoveExpiredMembers();
 	int GetMemberNodeId();
 	int GetMemberNodePort();
 

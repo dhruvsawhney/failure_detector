@@ -341,7 +341,27 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 void MP1Node::nodeLoopOps() {
 
     this->IncrementMetadataForSelf();
+    this->TryRemoveExpiredMembers();
     return;
+}
+
+bool MP1Node::TryRemoveExpiredMembers()
+{
+    vector<MemberListEntry>::iterator ptr = this->memberNode->memberList.begin();
+    for (;ptr < this->memberNode->memberList.end(); ptr++)
+    {
+        if (ptr->getid() == this->GetMemberNodeId() && ptr->getport() == this->GetMemberNodePort())
+        {
+            // can't remove self
+            continue;
+        }
+
+        // dhsawhne: > or >=?
+        if ((par->getcurrtime()-ptr->gettimestamp()) >= TREMOVE)
+        {
+            this->memberNode->memberList.erase(ptr);
+        }
+    }
 }
 
 void MP1Node::IncrementMetadataForSelf()
