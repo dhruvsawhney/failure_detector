@@ -172,9 +172,17 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
  * DESCRIPTION: Wind up this node and clean up state
  */
 int MP1Node::finishUpThisNode(){
-   /*
-    * Your code goes here
-    */
+	memberNode->bFailed = false;
+	memberNode->inited = false;
+	memberNode->inGroup = false;
+    
+	memberNode->nnb = 0;
+	memberNode->heartbeat = 0;
+	memberNode->pingCounter = TFAIL;
+	memberNode->timeOutCounter = -1;
+
+    memberNode->memberList.clear();
+    return 1;
 }
 
 /**
