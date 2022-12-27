@@ -320,7 +320,7 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 
             if (id > 10)
             {
-                cout << "here" << endl;
+                cout << "here" << endl; 
             }
 
             log->logNodeAdd(&memberNode->addr, &addr);
@@ -420,7 +420,7 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
                     cout << "here" << endl;
                 }
 
-                log->logNodeAdd(&this->memberNode->addr, &addedAddress);
+                // log->logNodeAdd(&this->memberNode->addr, &addedAddress);
             }
         }
     }
@@ -434,6 +434,12 @@ void MP1Node::GossipMembershipList()
         // dhsawhne: > or >=?
         if ((par->getcurrtime()-ptr->gettimestamp()) >= TFAIL)
         {
+            continue;
+        }
+
+        if (ptr->getid() == this->GetMemberNodeId() && ptr->getport() == this->GetMemberNodePort())
+        {
+            // don't include self
             continue;
         }
 
@@ -460,6 +466,12 @@ void MP1Node::GossipMembershipList()
             continue;
         }
 
+         if (ptr->getid() == this->GetMemberNodeId() && ptr->getport() == this->GetMemberNodePort())
+        {
+            // don't include self
+            continue;
+        }
+
         if (ptr->getid() > 10)
         {
             cout << "here" << endl;
@@ -469,22 +481,28 @@ void MP1Node::GossipMembershipList()
 
         memcpy(nextPtr, &(*ptr), sizeof(MemberListEntry));
         nextPtr += sizeof(MemberListEntry);
-
-        MemberListEntry tempEntry;
-        memcpy(&tempEntry, tempPtr, sizeof(MemberListEntry));
-        if (tempEntry.getid() > 10)
-        {
-            cout << "here" << endl;
-        }
     }
 
     // finally, send the message to each member
     // dhsawhne: optimize by sending to only few members
     for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
     {
+        if (ptr->getid() == this->GetMemberNodeId() && ptr->getport() == this->GetMemberNodePort())
+        {
+            // don't include self
+            continue;
+        }
+
         Address sendingAddress;
         this->PopulateAddress(&sendingAddress, ptr->getid());
 
+        if (ptr->getid() > 10)
+        {
+            cout << "here" << endl;
+        }
+
+        string s(sendingAddress.addr);
+        cout << "Sending address: " << s << endl;
         emulNet->ENsend(&memberNode->addr, &sendingAddress, (char *)sendingMsg, msgSize);
     }
 
@@ -549,10 +567,10 @@ void MP1Node::PopulateAddress(Address* address, int id)
 {
     memset(address, '\0', sizeof(address->addr));
 
-    memcpy(&(address->addr[0]), &id, sizeof(int));
+    address->addr[0] = id;
 
     short port = 0;
-    memcpy(&(address->addr[4]), &port, sizeof(short));
+    address->addr[4] = port;
 }
 
 /**
