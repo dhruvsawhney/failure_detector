@@ -472,6 +472,7 @@ void MP1Node::GossipMembershipList()
 
         char* tempPtr = nextPtr;
 
+        cout << "SERIALIZE: " << "ID: " << ptr->getid() << " Port: " << ptr->getport() << " HB: " << ptr->getheartbeat() << " TS: " << ptr->gettimestamp() << endl;
         memcpy(nextPtr, &(*ptr), sizeof(MemberListEntry));
         nextPtr += sizeof(MemberListEntry);
     }
