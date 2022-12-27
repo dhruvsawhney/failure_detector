@@ -139,11 +139,6 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
             Address addr;
             memcpy(&(addr.addr[0]), &id, sizeof(int));
 
-            if (id > 10)
-            {
-                cout << "here" << endl;
-            }
-
             log->logNodeAdd(&memberNode->addr, &addr);
         }
     }
@@ -318,11 +313,6 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
             MemberListEntry memberEntry(id, 0, 0, 0);
             memberNode->memberList.push_back(memberEntry);
 
-            if (id > 10)
-            {
-                cout << "here" << endl; 
-            }
-
             log->logNodeAdd(&memberNode->addr, &addr);
 
             // increment the pointer
@@ -368,10 +358,7 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
     int incomingMembers = 0;
     memcpy(&incomingMembers, nextPtr, sizeof(int));
 
-    if (incomingMembers > 10)
-    {
-        cout << "here" << endl;
-    }
+    nextPtr += sizeof(int);
 
     for (int i = 0; i < incomingMembers; i++)
     {
@@ -418,13 +405,6 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
 
                 Address addedAddress;
                 this->PopulateAddress(&addedAddress, newMemberEntry.getid());
-
-                if (newMemberEntry.getid() > 10)
-                {
-                    cout << "here" << endl;
-                }
-
-                // log->logNodeAdd(&this->memberNode->addr, &addedAddress);
             }
         }
     }
@@ -465,11 +445,6 @@ void MP1Node::GossipMembershipList()
             continue;
         }
 
-        if (ptr->getport() > 0)
-        {
-            cout << "port bigger than zero" << endl;
-        }
-
         char* tempPtr = nextPtr;
 
         cout << "SERIALIZE: " << "ID: " << ptr->getid() << " Port: " << ptr->getport() << " HB: " << ptr->getheartbeat() << " TS: " << ptr->gettimestamp() << endl;
@@ -489,19 +464,6 @@ void MP1Node::GossipMembershipList()
 
         Address sendingAddress;
         this->PopulateAddress(&sendingAddress, ptr->getid());
-
-        try
-        {
-            string s(sendingAddress.addr);
-            cout << "Sending address: " << s << endl;
-
-            int i = std::stoi(s);
-            cout << i << endl;
-        }
-        catch(const std::exception& e)
-        {
-            std::cerr << e.what() << '\n';
-        }
        
         emulNet->ENsend(&memberNode->addr, &sendingAddress, (char *)sendingMsg, msgSize);
     }
