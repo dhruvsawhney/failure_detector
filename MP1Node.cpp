@@ -132,7 +132,7 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
 
         for (int i = 0; i < par->EN_GPSZ; i++)
         {     
-            MemberListEntry memberEntry(i, 0, 0, 0);
+            MemberListEntry memberEntry(i+1, 0, 0, 0);
             memberNode->memberList.push_back(memberEntry);
 
             int id = i;
@@ -368,7 +368,12 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
     int incomingMembers = 0;
     memcpy(&incomingMembers, nextPtr, sizeof(int));
 
-    for (int i = 0; i <= incomingMembers; i++)
+    if (incomingMembers > 10)
+    {
+        cout << "here" << endl;
+    }
+
+    for (int i = 0; i < incomingMembers; i++)
     {
         MemberListEntry incomingMemberEntry;
         memset(&incomingMemberEntry, '\0', sizeof(MemberListEntry));
@@ -376,7 +381,7 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
         memcpy(&incomingMemberEntry, nextPtr, sizeof(MemberListEntry));
         nextPtr += sizeof(MemberListEntry);
 
-        if (incomingMemberEntry.getid() == this->GetMemberNodeId() && incomingMemberEntry.getport() == this->GetMemberNodePort())
+        if (incomingMemberEntry.getid() == this->GetMemberNodeId())
         {
             // can't reconcile self, only increment counters for self
             continue;
@@ -386,8 +391,7 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
         auto internalMemberEntry = this->memberNode->memberList.begin();
         for (; internalMemberEntry < this->memberNode->memberList.end(); internalMemberEntry++)
         {
-            if (internalMemberEntry->getid() == incomingMemberEntry.getid() 
-            && internalMemberEntry->getport() == incomingMemberEntry.getport())
+            if (internalMemberEntry->getid() == incomingMemberEntry.getid())
             {
                 found = true;
                 break;
@@ -428,18 +432,13 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
 
 void MP1Node::GossipMembershipList()
 {
+    // get all active members (including self)
     int activeMembers = 0;
     for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
     {
         // dhsawhne: > or >=?
         if ((par->getcurrtime()-ptr->gettimestamp()) >= TFAIL)
         {
-            continue;
-        }
-
-        if (ptr->getid() == this->GetMemberNodeId() && ptr->getport() == this->GetMemberNodePort())
-        {
-            // don't include self
             continue;
         }
 
@@ -466,15 +465,9 @@ void MP1Node::GossipMembershipList()
             continue;
         }
 
-         if (ptr->getid() == this->GetMemberNodeId() && ptr->getport() == this->GetMemberNodePort())
+        if (ptr->getport() > 0)
         {
-            // don't include self
-            continue;
-        }
-
-        if (ptr->getid() > 10)
-        {
-            cout << "here" << endl;
+            cout << "port bigger than zero" << endl;
         }
 
         char* tempPtr = nextPtr;
@@ -487,22 +480,28 @@ void MP1Node::GossipMembershipList()
     // dhsawhne: optimize by sending to only few members
     for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
     {
-        if (ptr->getid() == this->GetMemberNodeId() && ptr->getport() == this->GetMemberNodePort())
+        if (ptr->getid() == this->GetMemberNodeId())
         {
-            // don't include self
+            // don't send message to self
             continue;
         }
 
         Address sendingAddress;
         this->PopulateAddress(&sendingAddress, ptr->getid());
 
-        if (ptr->getid() > 10)
+        try
         {
-            cout << "here" << endl;
-        }
+            string s(sendingAddress.addr);
+            cout << "Sending address: " << s << endl;
 
-        string s(sendingAddress.addr);
-        cout << "Sending address: " << s << endl;
+            int i = std::stoi(s);
+            cout << i << endl;
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+        }
+       
         emulNet->ENsend(&memberNode->addr, &sendingAddress, (char *)sendingMsg, msgSize);
     }
 
@@ -515,7 +514,7 @@ bool MP1Node::TryRemoveExpiredMembers()
     vector<MemberListEntry>::iterator ptr = this->memberNode->memberList.begin();
     for (;ptr < this->memberNode->memberList.end(); ptr++)
     {
-        if (ptr->getid() == this->GetMemberNodeId() && ptr->getport() == this->GetMemberNodePort())
+        if (ptr->getid() == this->GetMemberNodeId())
         {
             // can't remove self
             continue;
@@ -542,7 +541,7 @@ void MP1Node::IncrementMetadataForSelf()
     vector<MemberListEntry>::iterator ptr = this->memberNode->memberList.begin();
     for (;ptr < this->memberNode->memberList.end(); ptr++)
     {
-        if (ptr->getid() == this->GetMemberNodeId() && ptr->getport() == this->GetMemberNodePort())
+        if (ptr->getid() == this->GetMemberNodeId())
         {
             ptr->heartbeat++;
             ptr->timestamp++;
