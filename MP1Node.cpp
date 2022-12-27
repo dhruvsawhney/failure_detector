@@ -422,14 +422,10 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
 void MP1Node::GossipMembershipList()
 {
     // get all active members (including self)
-    int activeMembers = 0;
-    for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
-    {
-        activeMembers++;
-    }
+    int activeMembers = this->memberNode->memberList.size();
 
     // MessageFormat: MessageHeader, source address, # members, (#members * struct MembershipListEntry)
-    int msgSize = sizeof(MessageHdr) + sizeof(this->memberNode->addr.addr) + sizeof(int) +  (activeMembers*sizeof(MemberListEntry));
+    int msgSize = sizeof(MessageHdr) + sizeof(this->memberNode->addr.addr) + sizeof(int) + (activeMembers*sizeof(MemberListEntry));
     MessageHdr* sendingMsg = (MessageHdr*) malloc(msgSize);
     sendingMsg->msgType = GOSSIP;
 
@@ -440,7 +436,7 @@ void MP1Node::GossipMembershipList()
     memcpy(nextPtr, &activeMembers, sizeof(int));
     nextPtr += sizeof(int);
 
-    for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
+    for (auto ptr = this->memberNode->memberList.begin(); ptr != this->memberNode->memberList.end(); ptr++)
     {
         // cout << "SERIALIZE: " << "ID: " << ptr->getid() << " Port: " << ptr->getport() << " HB: " << ptr->getheartbeat() << " TS: " << ptr->gettimestamp() << endl;
         memcpy(nextPtr, &(*ptr), sizeof(MemberListEntry));
@@ -449,7 +445,7 @@ void MP1Node::GossipMembershipList()
 
     // finally, send the message to each member
     // dhsawhne: optimize by sending to only few members
-    for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
+    for (auto ptr = this->memberNode->memberList.begin(); ptr != this->memberNode->memberList.end(); ptr++)
     {
         if (ptr->getid() == this->GetMemberNodeId())
         {
