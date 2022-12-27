@@ -132,12 +132,15 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
 
         for (int i = 0; i < par->EN_GPSZ; i++)
         {     
-            MemberListEntry memberEntry(i, 0, 0, 0);
+            int memberId = i+1;
+
+            // dhsawhne: ID should be consistent with the address of nodes created
+            // since node0 has ID of 1, need `i+1` defintion of the IDs
+            MemberListEntry memberEntry(memberId, 0, 0, 0);
             memberNode->memberList.push_back(memberEntry);
 
-            int id = i;
             Address addr;
-            memcpy(&(addr.addr[0]), &id, sizeof(int));
+            memcpy(&(addr.addr[0]), &memberId, sizeof(int));
 
             log->logNodeAdd(&memberNode->addr, &addr);
         }
