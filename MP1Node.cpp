@@ -388,6 +388,19 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
                 internalMemberEntry->heartbeat = incomingMemberEntry.getheartbeat();
                 internalMemberEntry->timestamp = par->getcurrtime();
             }
+            else
+            {
+                int diff = par->getcurrtime()-internalMemberEntry->gettimestamp();
+                if (diff >= (int)TREMOVE)
+                {
+                    Address removedAddress;
+                    this->PopulateAddress(&removedAddress, internalMemberEntry->getid());
+
+                    log->logNodeRemove(&this->memberNode->addr, &removedAddress);
+
+                    this->memberNode->memberList.erase(internalMemberEntry);
+                }
+            }
         }
         else
         {
@@ -412,12 +425,6 @@ void MP1Node::GossipMembershipList()
     int activeMembers = 0;
     for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
     {
-        // dhsawhne: > or >=?
-        if ((par->getcurrtime()-ptr->gettimestamp()) >= TFAIL)
-        {
-            continue;
-        }
-
         activeMembers++;
     }
 
@@ -435,12 +442,6 @@ void MP1Node::GossipMembershipList()
 
     for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
     {
-        // dhsawhne: > or >=?
-        if ((par->getcurrtime()-ptr->gettimestamp()) >= TFAIL)
-        {
-            continue;
-        }
-
         // cout << "SERIALIZE: " << "ID: " << ptr->getid() << " Port: " << ptr->getport() << " HB: " << ptr->getheartbeat() << " TS: " << ptr->gettimestamp() << endl;
         memcpy(nextPtr, &(*ptr), sizeof(MemberListEntry));
         nextPtr += sizeof(MemberListEntry);
@@ -467,6 +468,7 @@ void MP1Node::GossipMembershipList()
 
 bool MP1Node::TryRemoveExpiredMembers()
 {
+    /*
     bool isAnyMemberRemoved = false;
     for (auto memberPtr = this->memberNode->memberList.begin(); memberPtr != this->memberNode->memberList.end();)
     {
@@ -490,6 +492,7 @@ bool MP1Node::TryRemoveExpiredMembers()
             Address removedAddress;
             this->PopulateAddress(&removedAddress, memberPtr->id);
 
+            log->LOG(&this->memberNode->addr, "Will remove a node");
             log->logNodeRemove(&this->memberNode->addr, &removedAddress);
 
             cout << "Diff is: " << diff << endl;
@@ -501,31 +504,11 @@ bool MP1Node::TryRemoveExpiredMembers()
         {
             memberPtr++;
         }
-
-        /*
-        // dhsawhne: > or >=?
-        bool isTrue = (par->getcurrtime()-ptr->gettimestamp()) > TREMOVE;
-        if ((par->getcurrtime()-ptr->gettimestamp()) > TREMOVE)
-        {
-            Address removedAddress;
-            this->PopulateAddress(&removedAddress, ptr->getid());
-
-            this->memberNode->memberList.erase(ptr);
-            isAnyMemberRemoved = true;
-
-            int diff = par->getcurrtime()-ptr->gettimestamp();
-            if (diff == 0)
-            {
-                cout << "here" << endl;
-            }
-
-            cout << "Diff is: " << diff << endl;
-            log->logNodeRemove(&this->memberNode->addr, &removedAddress);
-        }
-        */
     }
-
     return isAnyMemberRemoved;
+    */
+
+   return false;
 }
 
 void MP1Node::IncrementMetadataForSelf()
