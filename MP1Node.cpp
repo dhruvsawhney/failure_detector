@@ -7,6 +7,7 @@
 
 #include "MP1Node.h"
 
+
 /*
  * Note: You can change/add any functions in MP1Node.{h,cpp}
  */
@@ -233,6 +234,7 @@ void MP1Node::checkMessages() {
     return;
 }
 
+
 /**
  * FUNCTION NAME: recvCallBack
  *
@@ -254,6 +256,16 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 
     memcpy(&incomingMsg, data, sizeof(MessageHdr));
     memcpy(joinaddr.addr, data + sizeof(MessageHdr), sizeof(memberNode->addr.addr));
+
+    /*
+    int sourceNum = 0;
+    memcpy(&sourceNum, &(joinaddr.addr[0]), 4);
+    std::stringstream ss;
+    ss << sourceNum;
+    std::string myString = ss.str();
+
+    log->LOG(&memberNode->addr, myString.c_str());
+    */
 
     // it will point to the data after both the message header and the `joinAddr`
     char* incomingNextPtr = data + sizeof(MessageHdr) + sizeof(memberNode->addr.addr);
@@ -327,7 +339,7 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 
     if (incomingMsg.msgType == GOSSIP)
     {
-        this->ReconcileGossipMembershipList(data);
+        this->ReconcileGossipMembershipList(data, joinaddr);
     }
 }
 
@@ -347,7 +359,7 @@ void MP1Node::nodeLoopOps() {
     return;
 }
 
-void MP1Node::ReconcileGossipMembershipList(char* data)
+void MP1Node::ReconcileGossipMembershipList(char* data, Address sourceAddress)
 {
     char* nextPtr = data + sizeof(MessageHdr) + sizeof(memberNode->addr.addr);
 
@@ -396,6 +408,10 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
                     Address removedAddress;
                     this->PopulateAddress(&removedAddress, internalMemberEntry->getid());
 
+                    #ifdef DEBUGLOG
+                    this->PrintLogRemoveInformation(sourceAddress);
+                    #endif
+
                     log->logNodeRemove(&this->memberNode->addr, &removedAddress);
 
                     this->memberNode->memberList.erase(internalMemberEntry);
@@ -414,6 +430,10 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
 
                 Address addedAddress;
                 this->PopulateAddress(&addedAddress, newMemberEntry.getid());
+
+                #ifdef DEBUGLOG
+                this->PrintLogAddInformation(sourceAddress);
+                #endif
 
                 log->logNodeAdd(&this->memberNode->addr, &addedAddress);
             }
@@ -587,4 +607,28 @@ void MP1Node::printAddress(Address *addr)
 {
     printf("%d.%d.%d.%d:%d \n",  addr->addr[0],addr->addr[1],addr->addr[2],
                                                        addr->addr[3], *(short*)&addr->addr[4]) ;    
+}
+
+void MP1Node::PrintLogAddInformation(Address sourceAddress)
+{
+     int sourceNum = 0;
+    memcpy(&sourceNum, &(sourceAddress.addr[0]), 4);
+    std::stringstream ss;
+    ss << sourceNum;
+    std::string myString = ss.str();
+
+    myString = "ADD from source: " + myString;
+    log->LOG(&memberNode->addr, myString.c_str());
+}
+
+void MP1Node::PrintLogRemoveInformation(Address sourceAddress)
+{
+     int sourceNum = 0;
+    memcpy(&sourceNum, &(sourceAddress.addr[0]), 4);
+    std::stringstream ss;
+    ss << sourceNum;
+    std::string myString = ss.str();
+
+    myString = "REMOVE from source: " + myString;
+    log->LOG(&memberNode->addr, myString.c_str());
 }
