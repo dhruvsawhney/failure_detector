@@ -350,9 +350,6 @@ void MP1Node::nodeLoopOps() {
 
 void MP1Node::ReconcileGossipMembershipList(char* data)
 {
-    // int msgSize = sizeof(MessageHdr) + sizeof(this->memberNode->addr.addr) + sizeof(int) +  (activeMembers*sizeof(MemberListEntry));
-    // char* nextPtr = ((char*)data) + sizeof(MessageHdr) + sizeof(this->memberNode->addr.addr);
-
     char* nextPtr = data + sizeof(MessageHdr) + sizeof(memberNode->addr.addr);
 
     int incomingMembers = 0;
@@ -444,8 +441,6 @@ void MP1Node::GossipMembershipList()
         {
             continue;
         }
-
-        char* tempPtr = nextPtr;
 
         cout << "SERIALIZE: " << "ID: " << ptr->getid() << " Port: " << ptr->getport() << " HB: " << ptr->getheartbeat() << " TS: " << ptr->gettimestamp() << endl;
         memcpy(nextPtr, &(*ptr), sizeof(MemberListEntry));
