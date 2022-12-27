@@ -140,7 +140,7 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
             memberNode->memberList.push_back(memberEntry);
 
             Address addr;
-            memcpy(&(addr.addr[0]), &memberId, sizeof(int));
+            this->PopulateAddress(&addr, memberId);
 
             log->logNodeAdd(&memberNode->addr, &addr);
         }
@@ -286,10 +286,6 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 
             next += sizeof(sendingAddr.addr);
         }
-
-        #ifdef DEBUGLOG
-        log->LOG(&memberNode->addr, "JoinReq received. Send response to: %s", joinaddr.addr);
-        #endif
 
         // send JOINREQ message to introducer member
         emulNet->ENsend(&memberNode->addr, &joinaddr, (char *)sendingMsg, msgsize);
