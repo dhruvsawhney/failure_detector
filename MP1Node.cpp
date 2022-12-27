@@ -365,6 +365,12 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 
     if (incomingMsg.msgType == GOSSIP)
     {   
+        if (!memberNode->inGroup)
+        {
+            // no-op GOSSIP until part of the group
+            return false;
+        }
+
         #ifdef DEBUGLOG
         this->PrintLogGossipReceiveInformation(joinaddr);
         #endif
@@ -376,6 +382,8 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
         memberNode->inGroup = true;
         */
     }
+
+    return true;
 }
 
 /**
