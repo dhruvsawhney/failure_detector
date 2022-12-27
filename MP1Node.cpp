@@ -468,17 +468,44 @@ void MP1Node::GossipMembershipList()
 bool MP1Node::TryRemoveExpiredMembers()
 {
     bool isAnyMemberRemoved = false;
-    vector<MemberListEntry>::iterator ptr = this->memberNode->memberList.begin();
-    for (;ptr < this->memberNode->memberList.end(); ptr++)
+    for (auto memberPtr = this->memberNode->memberList.begin(); memberPtr != this->memberNode->memberList.end();)
     {
-        if (ptr->getid() == this->GetMemberNodeId())
+        if (memberPtr->getid() == this->GetMemberNodeId())
         {
             // can't remove self
+            // increment counter still
+            memberPtr++;
             continue;
         }
 
+        int currentTimestamp = par->globaltime;
+        int memberTimestamp = memberPtr->timestamp;
+
+        int diff = currentTimestamp-memberTimestamp;
+
+        // should be > 20
+        bool isExpiredEntry = diff >= (int)TREMOVE;
+        if (isExpiredEntry)
+        {
+            Address removedAddress;
+            this->PopulateAddress(&removedAddress, memberPtr->id);
+
+            log->logNodeRemove(&this->memberNode->addr, &removedAddress);
+
+            cout << "Diff is: " << diff << endl;
+
+            // pointer to next valid element
+            memberPtr = this->memberNode->memberList.erase(memberPtr);   
+        }
+        else
+        {
+            memberPtr++;
+        }
+
+        /*
         // dhsawhne: > or >=?
-        if ((par->getcurrtime()-ptr->gettimestamp()) >= TREMOVE)
+        bool isTrue = (par->getcurrtime()-ptr->gettimestamp()) > TREMOVE;
+        if ((par->getcurrtime()-ptr->gettimestamp()) > TREMOVE)
         {
             Address removedAddress;
             this->PopulateAddress(&removedAddress, ptr->getid());
@@ -486,8 +513,16 @@ bool MP1Node::TryRemoveExpiredMembers()
             this->memberNode->memberList.erase(ptr);
             isAnyMemberRemoved = true;
 
+            int diff = par->getcurrtime()-ptr->gettimestamp();
+            if (diff == 0)
+            {
+                cout << "here" << endl;
+            }
+
+            cout << "Diff is: " << diff << endl;
             log->logNodeRemove(&this->memberNode->addr, &removedAddress);
         }
+        */
     }
 
     return isAnyMemberRemoved;
