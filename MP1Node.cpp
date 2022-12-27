@@ -372,7 +372,7 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
         }
 
         #ifdef DEBUGLOG
-        this->PrintLogGossipReceiveInformation(joinaddr);
+        // this->PrintLogGossipReceiveInformation(joinaddr);
         #endif
 
         this->ReconcileGossipMembershipList(data, joinaddr);
