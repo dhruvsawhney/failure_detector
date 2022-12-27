@@ -270,7 +270,11 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
     // it will point to the data after both the message header and the `joinAddr`
     char* incomingNextPtr = data + sizeof(MessageHdr) + sizeof(memberNode->addr.addr);
     if (incomingMsg.msgType == JOINREQ)
-    {
+    {   
+        #ifndef DEBUG
+        log->LOG(&this->memberNode->addr, "Found JOINREQ");
+        #endif
+
         int members = memberNode->memberList.size();
 
         // format: message type, sender (i.e. current node), # members, (# members * address of each member)
@@ -291,9 +295,7 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
             int id = i.getid();
 
             Address sendingAddr;
-            *(int *)(&(sendingAddr.addr))=id;
-            *(short *)(&(sendingAddr.addr[4]))=0;
-
+            this->PopulateAddress(&sendingAddr, id);
             memcpy(next, &sendingAddr.addr, sizeof(sendingAddr.addr));
 
             next += sizeof(sendingAddr.addr);
@@ -307,6 +309,10 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 
     if (incomingMsg.msgType == JOINREP)
     {
+        #ifdef DEBUG
+        log->LOG(&this->memberNode->addr, "Found JOINREP");
+        #endif
+
         int members = 0;
         memcpy(&members, incomingNextPtr, sizeof(int));
         incomingNextPtr += sizeof(int);
@@ -314,12 +320,32 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
         // dhsawhne: TODO we included self in the membership list here and in the seed node
         // we shouldn't include self
         for (int i = 0; i < members; i++)
-        {
+        {   
+            // get the address from the payload
             Address addr;
             memcpy(&addr, incomingNextPtr, sizeof(addr.addr));
 
+            // parse the id given the address
             int id = 0;
             memcpy(&id, &(addr.addr[0]), sizeof(int));
+
+            /*
+            bool found = false;
+            for(auto& member : this->memberNode->memberList)
+            {
+                if (member.id == id)
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found)
+            {
+                // skip if already added
+                continue;
+            }
+            */
 
             MemberListEntry memberEntry(id, 0, 0, 0);
             memberNode->memberList.push_back(memberEntry);
@@ -338,11 +364,19 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
     }
 
     if (incomingMsg.msgType == GOSSIP)
-    {
+    {   
+        #ifdef DEBUGLOG
+        this->PrintLogGossipReceiveInformation(joinaddr);
+        #endif
+
         this->ReconcileGossipMembershipList(data, joinaddr);
+
+        /*
+        // mark as in-group if received GOSSIP from source before 
+        memberNode->inGroup = true;
+        */
     }
 }
-
 
 /**
  * FUNCTION NAME: nodeLoopOps
@@ -623,12 +657,24 @@ void MP1Node::PrintLogAddInformation(Address sourceAddress)
 
 void MP1Node::PrintLogRemoveInformation(Address sourceAddress)
 {
-     int sourceNum = 0;
+    int sourceNum = 0;
     memcpy(&sourceNum, &(sourceAddress.addr[0]), 4);
     std::stringstream ss;
     ss << sourceNum;
     std::string myString = ss.str();
 
     myString = "REMOVE from source: " + myString;
+    log->LOG(&memberNode->addr, myString.c_str());
+}
+
+void MP1Node::PrintLogGossipReceiveInformation(Address sourceAddress)
+{   
+    int sourceNum = 0;
+    memcpy(&sourceNum, &(sourceAddress.addr[0]), 4);
+    std::stringstream ss;
+    ss << sourceNum;
+    std::string myString = ss.str();
+
+    myString = "RECEIVE GOSSIP from source: " + myString;
     log->LOG(&memberNode->addr, myString.c_str());
 }

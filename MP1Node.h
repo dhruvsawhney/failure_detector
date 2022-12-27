@@ -8,6 +8,8 @@
 #ifndef _MP1NODE_H_
 #define _MP1NODE_H_
 
+#include <sstream>
+#include <string>
 #include "stdincludes.h"
 #include "Log.h"
 #include "Params.h"
@@ -60,12 +62,15 @@ private:
 	void IncrementMetadataForSelf();
 	bool TryRemoveExpiredMembers();
 	void GossipMembershipList();
-	void ReconcileGossipMembershipList(char* data);
+	void ReconcileGossipMembershipList(char* data, Address sourceAddress);
 
 	void PopulateAddress(Address* address, int id);
 	int GetMemberNodeId();
 	int GetMemberNodePort();
 
+	void PrintLogAddInformation(Address sourceAddress);
+	void PrintLogRemoveInformation(Address sourceAddress);
+	void PrintLogGossipReceiveInformation(Address sourceAddress);
 
 public:
 	MP1Node(Member *, Params *, EmulNet *, Log *, Address *);
