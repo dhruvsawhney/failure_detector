@@ -132,7 +132,7 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
 
         for (int i = 0; i < par->EN_GPSZ; i++)
         {     
-            MemberListEntry memberEntry(i+1, 0, 0, 0);
+            MemberListEntry memberEntry(i, 0, 0, 0);
             memberNode->memberList.push_back(memberEntry);
 
             int id = i;
@@ -442,7 +442,7 @@ void MP1Node::GossipMembershipList()
             continue;
         }
 
-        cout << "SERIALIZE: " << "ID: " << ptr->getid() << " Port: " << ptr->getport() << " HB: " << ptr->getheartbeat() << " TS: " << ptr->gettimestamp() << endl;
+        // cout << "SERIALIZE: " << "ID: " << ptr->getid() << " Port: " << ptr->getport() << " HB: " << ptr->getheartbeat() << " TS: " << ptr->gettimestamp() << endl;
         memcpy(nextPtr, &(*ptr), sizeof(MemberListEntry));
         nextPtr += sizeof(MemberListEntry);
     }
