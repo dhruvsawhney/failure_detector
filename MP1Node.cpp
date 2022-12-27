@@ -414,6 +414,8 @@ void MP1Node::ReconcileGossipMembershipList(char* data)
 
                 Address addedAddress;
                 this->PopulateAddress(&addedAddress, newMemberEntry.getid());
+
+                log->logNodeAdd(&this->memberNode->addr, &addedAddress);
             }
         }
     }
