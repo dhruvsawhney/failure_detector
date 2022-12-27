@@ -60,7 +60,6 @@ private:
 	char NULLADDR[6];
 
 	void IncrementMetadataForSelf();
-	bool TryRemoveExpiredMembers();
 	void GossipMembershipList();
 	void ReconcileGossipMembershipList(char* data, Address sourceAddress);
 

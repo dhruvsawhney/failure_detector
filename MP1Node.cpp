@@ -135,7 +135,7 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
         {     
             int memberId = i+1;
 
-            // dhsawhne: ID should be consistent with the address of nodes created
+            // The ID should be consistent with the address of nodes created
             // since node0 has ID of 1, need `i+1` defintion of the IDs
             MemberListEntry memberEntry(memberId, 0, 0, 0);
             memberNode->memberList.push_back(memberEntry);
@@ -204,7 +204,6 @@ void MP1Node::nodeLoop() {
     checkMessages();
 
     // Wait until you're in the group...
-    // dhsawhne: this is the main line that blocks further operations
     if( !memberNode->inGroup ) {
     	return;
     }
@@ -252,22 +251,12 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
     // get the data back in the required format
     // the incoming message type
     MessageHdr incomingMsg;
-    Address joinaddr;
+    Address sourceAddress;
 
     memcpy(&incomingMsg, data, sizeof(MessageHdr));
-    memcpy(joinaddr.addr, data + sizeof(MessageHdr), sizeof(memberNode->addr.addr));
+    memcpy(sourceAddress.addr, data + sizeof(MessageHdr), sizeof(memberNode->addr.addr));
 
-    /*
-    int sourceNum = 0;
-    memcpy(&sourceNum, &(joinaddr.addr[0]), 4);
-    std::stringstream ss;
-    ss << sourceNum;
-    std::string myString = ss.str();
-
-    log->LOG(&memberNode->addr, myString.c_str());
-    */
-
-    // it will point to the data after both the message header and the `joinAddr`
+    // it will point to the data after both the message header and the `sourceAddress`
     char* incomingNextPtr = data + sizeof(MessageHdr) + sizeof(memberNode->addr.addr);
     if (incomingMsg.msgType == JOINREQ)
     {   
@@ -301,8 +290,8 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
             next += sizeof(sendingAddr.addr);
         }
 
-        // send JOINREQ message to introducer member
-        emulNet->ENsend(&memberNode->addr, &joinaddr, (char *)sendingMsg, msgsize);
+        // respond to the source with information about membership group
+        emulNet->ENsend(&memberNode->addr, &sourceAddress, (char *)sendingMsg, msgsize);
 
         free(sendingMsg);
     }
@@ -317,8 +306,6 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
         memcpy(&members, incomingNextPtr, sizeof(int));
         incomingNextPtr += sizeof(int);
 
-        // dhsawhne: TODO we included self in the membership list here and in the seed node
-        // we shouldn't include self
         for (int i = 0; i < members; i++)
         {   
             // get the address from the payload
@@ -329,24 +316,6 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
             int id = 0;
             memcpy(&id, &(addr.addr[0]), sizeof(int));
 
-            /*
-            bool found = false;
-            for(auto& member : this->memberNode->memberList)
-            {
-                if (member.id == id)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found)
-            {
-                // skip if already added
-                continue;
-            }
-            */
-
             MemberListEntry memberEntry(id, 0, 0, 0);
             memberNode->memberList.push_back(memberEntry);
 
@@ -356,6 +325,9 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
             incomingNextPtr += sizeof(addr.addr);
         }
 
+        // at this point, this node is part of the group
+        // it's now ready to perform operations related to individual node
+        // and group membership list
         memberNode->inGroup = true;
 
         #ifdef DEBUGLOG
@@ -368,19 +340,13 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
         if (!memberNode->inGroup)
         {
             // no-op GOSSIP until part of the group
+            // we could have a race between seed member sending JoinRep payload
+            // and non-seed member (that's already part of the group) sending a GOSSIP message
+            // to this node
             return false;
         }
 
-        #ifdef DEBUGLOG
-        // this->PrintLogGossipReceiveInformation(joinaddr);
-        #endif
-
-        this->ReconcileGossipMembershipList(data, joinaddr);
-
-        /*
-        // mark as in-group if received GOSSIP from source before 
-        memberNode->inGroup = true;
-        */
+        this->ReconcileGossipMembershipList(data, sourceAddress);
     }
 
     return true;
@@ -396,7 +362,6 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 void MP1Node::nodeLoopOps() {
 
     this->IncrementMetadataForSelf();
-    this->TryRemoveExpiredMembers();
     this->GossipMembershipList();
     return;
 }
@@ -502,13 +467,10 @@ void MP1Node::GossipMembershipList()
 
     for (auto ptr = this->memberNode->memberList.begin(); ptr != this->memberNode->memberList.end(); ptr++)
     {
-        // cout << "SERIALIZE: " << "ID: " << ptr->getid() << " Port: " << ptr->getport() << " HB: " << ptr->getheartbeat() << " TS: " << ptr->gettimestamp() << endl;
         memcpy(nextPtr, &(*ptr), sizeof(MemberListEntry));
         nextPtr += sizeof(MemberListEntry);
     }
 
-    // finally, send the message to each member
-    // dhsawhne: optimize by sending to only few members
     for (auto ptr = this->memberNode->memberList.begin(); ptr != this->memberNode->memberList.end(); ptr++)
     {
         if (ptr->getid() == this->GetMemberNodeId())
@@ -526,55 +488,9 @@ void MP1Node::GossipMembershipList()
     free(sendingMsg);
 }
 
-bool MP1Node::TryRemoveExpiredMembers()
-{
-    /*
-    bool isAnyMemberRemoved = false;
-    for (auto memberPtr = this->memberNode->memberList.begin(); memberPtr != this->memberNode->memberList.end();)
-    {
-        if (memberPtr->getid() == this->GetMemberNodeId())
-        {
-            // can't remove self
-            // increment counter still
-            memberPtr++;
-            continue;
-        }
-
-        int currentTimestamp = par->globaltime;
-        int memberTimestamp = memberPtr->timestamp;
-
-        int diff = currentTimestamp-memberTimestamp;
-
-        // should be > 20
-        bool isExpiredEntry = diff >= (int)TREMOVE;
-        if (isExpiredEntry)
-        {
-            Address removedAddress;
-            this->PopulateAddress(&removedAddress, memberPtr->id);
-
-            log->LOG(&this->memberNode->addr, "Will remove a node");
-            log->logNodeRemove(&this->memberNode->addr, &removedAddress);
-
-            cout << "Diff is: " << diff << endl;
-
-            // pointer to next valid element
-            memberPtr = this->memberNode->memberList.erase(memberPtr);   
-        }
-        else
-        {
-            memberPtr++;
-        }
-    }
-    return isAnyMemberRemoved;
-    */
-
-   return false;
-}
-
 void MP1Node::IncrementMetadataForSelf()
 {
-    vector<MemberListEntry>::iterator ptr = this->memberNode->memberList.begin();
-    for (;ptr < this->memberNode->memberList.end(); ptr++)
+    for (auto ptr = this->memberNode->memberList.begin(); ptr < this->memberNode->memberList.end(); ptr++)
     {
         if (ptr->getid() == this->GetMemberNodeId())
         {
@@ -599,7 +515,7 @@ int MP1Node::GetMemberNodePort()
 
 void MP1Node::PopulateAddress(Address* address, int id)
 {
-    memset(address, '\0', sizeof(address->addr));
+    memset(address->addr, '\0', sizeof(address->addr));
 
     address->addr[0] = id;
 
@@ -653,7 +569,7 @@ void MP1Node::printAddress(Address *addr)
 
 void MP1Node::PrintLogAddInformation(Address sourceAddress)
 {
-     int sourceNum = 0;
+    int sourceNum = 0;
     memcpy(&sourceNum, &(sourceAddress.addr[0]), 4);
     std::stringstream ss;
     ss << sourceNum;
